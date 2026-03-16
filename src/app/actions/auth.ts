@@ -124,6 +124,28 @@ export async function signupAction(_prevState: { error: string } | null, formDat
   redirect("/");
 }
 
+export async function devLoginAction(_prevState: { error: string } | null, _formData: FormData) {
+  try {
+    // DB 첫 번째 active 유저로 자동 로그인
+    const user = await prisma.user.findFirst({
+      where: { status: "active" },
+      orderBy: { id: "asc" },
+    });
+
+    if (!user) {
+      return { error: "active 유저가 없습니다." };
+    }
+
+    const token = await generateToken(user);
+    const cookieStore = await cookies();
+    cookieStore.set(WEB_SESSION_COOKIE, token, COOKIE_OPTIONS);
+  } catch {
+    return { error: "Dev 로그인 중 오류가 발생했습니다." };
+  }
+
+  redirect("/");
+}
+
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete(WEB_SESSION_COOKIE);
